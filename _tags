@@ -1,0 +1,2 @@
+true: syntax(camlp4o)
+<*>: thread, package(core), package(sexplib.syntax), package(sexplib)
