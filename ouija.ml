@@ -1,20 +1,18 @@
-open Sexplib.Std
-
 type params = (string * string) list
 
 type descr = Name of string
            | Var of string
-           | Rest with sexp_of
+           | Rest
 
-type ('handler) child = descr * 'handler node
-and ('handler) node = {children: 'handler child list;
-                       handlers: 'handler list} with sexp_of
+type ('a) child = descr * 'a node
+ and ('a) node = {children: 'a child list;
+                  handlers: 'a list}
 
 type ('a) found = Found of 'a list
                 | NotFound of 'a list
 
-type ('handler) t = {path_char: char;
-                     root: 'handler node} with sexp_of
+type ('a) t = {path_char: char;
+               root: 'a node}
 
 let empty_node = {children = []; handlers = []}
 
@@ -58,9 +56,9 @@ let parse_uri_spec split_ch uri_spec =
   let rec split last current length acc =
     if current < length
     then if uri_spec.[current] = split_ch
-          then split (current + 1) (current + 1) length
-                     (String.sub uri_spec last (current - last)::acc)
-          else split last (current + 1) length acc
+         then split (current + 1) (current + 1) length
+                    (String.sub uri_spec last (current - last)::acc)
+         else split last (current + 1) length acc
     else
       List.rev (String.sub uri_spec last (current - last)::acc) in
   let start = first 0 in
@@ -69,10 +67,10 @@ let parse_uri_spec split_ch uri_spec =
 let convert_to_searchable_path split_ch path =
   List.map convert_element (parse_uri_spec split_ch path)
 
-type ('handler) best_carry = {depth: int;
-                              param_count: int;
-                              params: params;
-                              handler: 'handler}
+type ('a) best_carry = {depth: int;
+                        param_count: int;
+                        params: params;
+                        handler: 'a}
 
 (* The goal here is to ensure that the most specific path is sorted
  * first and the least specific path sorted last. We determine
@@ -105,8 +103,8 @@ let node_to_acc node element_count params =
              handler = handler}) node.handlers
 
 let merge {path_char=ch} =
-    List.fold_left (fun acc element ->
-                    acc ^ String.make 1 ch ^ element) ""
+  List.fold_left (fun acc element ->
+                  acc ^ String.make 1 ch ^ element) ""
 
 let rec p sys element element_count path params acc child  =
   match child with
@@ -139,6 +137,6 @@ let resolve_path sys path =
 let init path_split =
   {path_char=path_split; root=empty_node}
 
-let insert_handler {path_char=ch; root=node} uri_spec handler =
+let insert {path_char=ch; root=node} uri_spec handler =
   {path_char=ch;
    root=insert_into_node node handler (convert_to_searchable_path ch uri_spec)}

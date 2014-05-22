@@ -1,7 +1,7 @@
-type ('handler) t with sexp_of
+type ('a) t
 
 type params = (string * string) list
 
-val init: char -> 'handler t
-val resolve_path: 'handler t -> string -> (params * 'handler) list
-val insert_handler: 'handler t -> string -> 'handler -> 'handler t
+val init: char -> 'a t
+val resolve_path: 'a t -> string -> (params * 'a) list
+val insert: 'a t -> string -> 'a -> 'a t
