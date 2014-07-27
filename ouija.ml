@@ -48,24 +48,24 @@ let convert_element el =
           | ':' -> Var (strip_leading_colon el)
           | _ -> Name el
 
-let parse_uri_spec split_ch uri_spec =
-  let rec first count = if (count < String.length uri_spec &&
-                              uri_spec.[count] = split_ch)
+let parse_path split_ch path =
+  let rec first count = if (count < String.length path &&
+                              path.[count] = split_ch)
                         then first (count + 1)
                         else count in
   let rec split last current length acc =
     if current < length
-    then if uri_spec.[current] = split_ch
+    then if path.[current] = split_ch
          then split (current + 1) (current + 1) length
-                    (String.sub uri_spec last (current - last)::acc)
+                    (String.sub path last (current - last)::acc)
          else split last (current + 1) length acc
     else
-      List.rev (String.sub uri_spec last (current - last)::acc) in
+      List.rev (String.sub path last (current - last)::acc) in
   let start = first 0 in
-  split start start (String.length uri_spec) []
+  split start start (String.length path) []
 
 let convert_to_searchable_path split_ch path =
-  List.map convert_element (parse_uri_spec split_ch path)
+  List.map convert_element (parse_path split_ch path)
 
 type ('a) best_carry = {depth: int;
                         param_count: int;
@@ -129,7 +129,7 @@ and get_handler sys node element_count path params acc =
 
 let resolve_path sys path =
   let {path_char=sp; root=node} = sys in
-  let path_elements = parse_uri_spec sp path in
+  let path_elements = parse_path sp path in
   let result = get_handler sys node 0 path_elements [] [] in
   List.map (fun {params=params; handler=handler} ->
             (params, handler)) (List.sort carry_compare result)
@@ -137,6 +137,6 @@ let resolve_path sys path =
 let init path_split =
   {path_char=path_split; root=empty_node}
 
-let insert {path_char=ch; root=node} uri_spec handler =
+let insert {path_char=ch; root=node} path handler =
   {path_char=ch;
-   root=insert_into_node node handler (convert_to_searchable_path ch uri_spec)}
+   root=insert_into_node node handler (convert_to_searchable_path ch path)}
