@@ -1,1 +1,2 @@
 <*>: thread
+<*_tests*.*>: package(oUnit)
