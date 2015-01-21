@@ -1,6 +1,5 @@
 ".git": -traverse
 ".git": not_hygienic
-
 true: warn_error_A, warn(-40)
 
-<src>: include
+<lib>: include
