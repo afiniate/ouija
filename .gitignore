@@ -1,0 +1,8 @@
+*.cmx
+*.cmxs
+*.cmxa
+*.swp
+_build
+opam
+myocamlbuild.ml
+vrt.mk
