@@ -1,4 +1,6 @@
-open OUnit2
+open Core.Std
+open Sentinel.Std
+open Ouija_tests
 
 let () =
-  run_test_tt_main Ouija_tests.suite
+  Basic.Executor.run Ouija_tests.unit_tests
