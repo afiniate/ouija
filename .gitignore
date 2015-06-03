@@ -5,4 +5,5 @@
 _build
 opam
 myocamlbuild.ml
-vrt.mk
+trv.mk
+.merlin
