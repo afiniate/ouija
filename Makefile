@@ -9,11 +9,9 @@ BUG_REPORTS:="https://github.com/afiniate/ouija/issues"
 
 DESC_FILE:=$(CURDIR)/description
 
-BUILD_DEPS:=vrt
-DEPS:=core async async_unix async_shell cohttp atdgen sexplib cryptokit
+OCAML_DEPS:=core async oUnit
 
+trv.mk:
+	trv build gen-mk
 
-vrt.mk:
-	vrt prj gen-mk
-
--include vrt.mk
+-include trv.mk
