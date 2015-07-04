@@ -9,7 +9,9 @@ BUG_REPORTS:="https://github.com/afiniate/ouija/issues"
 
 DESC_FILE:=$(CURDIR)/description
 
-OCAML_DEPS:=core async oUnit
+OCAML_PKG_DEPS := ocaml findlib camlp4
+OCAML_DEPS:=core async sentinel
+DEPS := trv vrt
 
 trv.mk:
 	trv build gen-mk

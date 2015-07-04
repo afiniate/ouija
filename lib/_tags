@@ -1,2 +1,1 @@
-<*>: thread
-<*_tests*.*>: package(oUnit)
+<*>: thread, package(core), package(async), package(sentinel)

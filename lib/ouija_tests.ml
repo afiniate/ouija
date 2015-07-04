@@ -1,74 +1,95 @@
-open OUnit2
+open Core.Std
+open Sentinel.Std
 
-let rest _ =
+let check exp op = fun _ -> exp = op ()
+
+let rest =
   let sys0 = Ouija.init '/' in
   let sys1 = Ouija.insert sys0 "/foo/bar/**" "hello" in
-  assert_equal [([("**", "/baz")], "hello")]
-    (Ouija.resolve_path sys1 "/foo/bar/baz");
-  assert_equal [([("**", "/baz/z/foo")], "hello")]
-    (Ouija.resolve_path sys1 "/foo/bar/baz/z/foo");
-  assert_equal [] (Ouija.resolve_path sys1 "/foo/")
+  let test1 = Basic.Test.make
+    "'**' 1 component"
+    (check [([("**", "/baz")], "hello")]
+      (fun () -> Ouija.resolve_path sys1 "/foo/bar/baz")) in
+  let test2 = Basic.Test.make
+    "'**' multiple components"
+    (check [([("**", "/baz/z/foo")], "hello")]
+       (fun () -> Ouija.resolve_path sys1 "/foo/bar/baz/z/foo")) in
+  let test3 = Basic.Test.make
+    "final '/'"
+    (check [] (fun () -> Ouija.resolve_path sys1 "/foo/")) in
+  [ test1; test2; test3 ]
 
-let vars _ =
+let vars =
   let sys0 = Ouija.init '/' in
   let sys1 = Ouija.insert sys0 "/foo/:bar/baz" "hello" in
-  assert_equal [([("bar", "bar")], "hello")]
-    (Ouija.resolve_path sys1 "/foo/bar/baz");
-  assert_equal [([("bar", "super")], "hello")]
-    (Ouija.resolve_path sys1 "/foo/super/baz");
-  assert_equal [] (Ouija.resolve_path sys1 "/foo/bar/bazer")
+  let test1 = Basic.Test.make
+    "1 ':' var alone (match is var name)"
+    (check [([("bar", "bar")], "hello")]
+       (fun () -> Ouija.resolve_path sys1 "foo/bar/baz")) in
+  let test2 = Basic.Test.make
+    "1 ':' var matching tail"
+    (check [([("bar", "super")], "hello")]
+       (fun () -> Ouija.resolve_path sys1 "foo/super/baz")) in
+  let test3 = Basic.Test.make
+    "1 ':' var non matching tail"
+    (check []
+       (fun () -> Ouija.resolve_path sys1 "foo/bar/bazer")) in
+  [ test1; test2; test3 ]
 
-let multi_vars _ =
+let multi_vars =
   let sys0 = Ouija.init '/' in
   let sys1 = Ouija.insert sys0 "/foo/:bar/:baz" "hello" in
-  assert_equal [([("baz", "baz");
-                  ("bar", "bar")], "hello")]
-    (Ouija.resolve_path sys1 "/foo/bar/baz");
-  assert_equal [([("baz", "baz");
-                  ("bar", "super")], "hello")]
-    (Ouija.resolve_path sys1 "/foo/super/baz");
-  assert_equal [([("baz", "bazer");
-                  ("bar", "bar")], "hello")] (Ouija.resolve_path sys1 "/foo/bar/bazer")
+  let test1 = Basic.Test.make
+    "2 ':' vars same name"
+    (check [([("baz", "baz"); ("bar", "bar")], "hello")]
+       (fun () -> Ouija.resolve_path sys1 "/foo/bar/baz")) in
+  let test2 = Basic.Test.make
+    "2 ':' vars first another name"
+    (check [([("baz", "baz"); ("bar", "super")], "hello")]
+       (fun () -> Ouija.resolve_path sys1 "/foo/super/baz")) in
+  let test3 = Basic.Test.make
+    "2 ':' vars last another name"
+    (check [([("baz", "bazer"); ("bar", "bar")], "hello")]
+       (fun () -> Ouija.resolve_path sys1 "/foo/bar/bazer")) in
+  [ test1; test2; test3 ]
 
-let multi_vars_rest _ =
+let multi_vars_rest =
   let sys0 = Ouija.init '/' in
   let sys1 = Ouija.insert sys0 "/foo/:bar/**" "hello" in
-  assert_equal [([("**", "/baz");
-                  ("bar", "bar")], "hello")]
-    (Ouija.resolve_path sys1 "/foo/bar/baz");
-  assert_equal [([("**", "/baz/back/bas");
-                  ("bar", "super")], "hello")]
-    (Ouija.resolve_path sys1 "/foo/super/baz/back/bas");
-  assert_equal [([("**", "/bazer");
-                  ("bar", "bar")], "hello")] (Ouija.resolve_path sys1 "/foo/bar/bazer")
+  let test1 = Basic.Test.make
+    "':' and '**' with another path element"
+    (check [([("**", "/baz"); ("bar", "bar")], "hello")]
+       (fun () ->Ouija.resolve_path sys1 "/foo/bar/baz")) in
+  let test2 = Basic.Test.make
+    "':' and '**' with several path element"
+    (check [([("**", "/baz/back/bas"); ("bar", "super")], "hello")]
+       (fun () -> Ouija.resolve_path sys1 "/foo/super/baz/back/bas")) in
+  [ test1; test2 ]
 
-let dot_multi_rest _ =
+let dot_multi_rest =
   let sys0 = Ouija.init '.' in
-  let sys1 = Ouija.insert sys0 "foo.:bar.**" "hello" in
-  assert_equal [([("**", ".baz");
-                  ("bar", "bar")], "hello")]
-    (Ouija.resolve_path sys1 "foo.bar.baz");
-  assert_equal [([("**", ".baz.back.bas");
-                  ("bar", "super")], "hello")]
-    (Ouija.resolve_path sys1 "foo.super.baz.back.bas");
-  assert_equal [([("**", ".bazer");
-                  ("bar", "bar")], "hello")] (Ouija.resolve_path sys1 "foo.bar.bazer")
+  let sys1 = Ouija.insert sys0 ".foo.:bar.**" "hello" in
+  let test1 = Basic.Test.make
+    "':' and '**' with another path element in '.' separated path"
+    (check [([("**", ".baz"); ("bar", "bar")], "hello")]
+       (fun () ->Ouija.resolve_path sys1 ".foo.bar.baz")) in
+  let test2 = Basic.Test.make
+    "':' and '**' with several path element '.' separated path"
+    (check [([("**", ".baz.back.bas"); ("bar", "super")], "hello")]
+       (fun () -> Ouija.resolve_path sys1 ".foo.super.baz.back.bas")) in
+  [ test1; test2 ]
 
-let star_vars _ =
+let star_vars =
   let sys0 = Ouija.init '.' in
   let sys1 = Ouija.insert sys0 "foo.*.*" "hello" in
-  assert_equal [([("*", "baz");
-                  ("*", "bar")], "hello")]
-    (Ouija.resolve_path sys1 "foo.bar.baz");
-  assert_equal [([("*", "baz");
-                  ("*", "super")], "hello")]
-    (Ouija.resolve_path sys1 "foo.super.baz");
-  assert_equal [([("*", "bazer");
-                  ("*", "bar")], "hello")] (Ouija.resolve_path sys1 "foo.bar.bazer")
+  let test1 = Basic.Test.make
+    "'*' delimiting a fixed amount of positions"
+    (check [([("*", "baz"); ("*", "bar")], "hello")]
+       (fun () -> Ouija.resolve_path sys1 "foo.bar.baz")) in
+  let test2 = Basic.Test.make
+    "'*' delimiting a fixed amount of positions nomatch"
+    (check [] (fun () -> Ouija.resolve_path sys1 "foo.bar.baz.bas")) in
+  [ test1; test2 ]
 
-let suite = "Ouija Tests" >::: ["add path rest" >:: rest;
-                                "add path var" >:: vars;
-                                "add multi vars" >:: multi_vars;
-                                "add multi var rest" >:: multi_vars_rest;
-                                "add dot multi rest" >:: dot_multi_rest;
-                                "add star vars" >:: star_vars]
+let unit_tests = List.concat
+  [rest; vars; multi_vars; multi_vars_rest; dot_multi_rest; star_vars]
